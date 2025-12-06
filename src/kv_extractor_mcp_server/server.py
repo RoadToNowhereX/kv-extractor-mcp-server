@@ -110,12 +110,18 @@ KV_EXTRACTOR_EVAL_MODEL = os.getenv("KV_EXTRACTOR_EVAL_MODEL", "gpt-4.1")
 
 if OPENAI_BASE_URL:
     logging.info(f"Using custom OpenAI Base URL: {OPENAI_BASE_URL}")
-    model_main = OpenAIModel(KV_EXTRACTOR_MODEL, base_url=OPENAI_BASE_URL)
-    model_eval = OpenAIModel(KV_EXTRACTOR_EVAL_MODEL, base_url=OPENAI_BASE_URL)
-else:
-    # Use default behavior (relies on OPENAI_API_KEY env var being set standardly)
-    model_main = f'openai:{KV_EXTRACTOR_MODEL}'
-    model_eval = f'openai:{KV_EXTRACTOR_EVAL_MODEL}'
+
+# Initialize models - checking ENV vars is handled by the underlying OpenAI client if not explicitly passed.
+# PydanticAI's OpenAIModel (OpenAIChatModel) will use the standard environment variables (OPENAI_API_KEY, OPENAI_BASE_URL).
+try:
+    model_main = OpenAIModel(KV_EXTRACTOR_MODEL)
+    model_eval = OpenAIModel(KV_EXTRACTOR_EVAL_MODEL)
+except TypeError:
+    # Fallback/Edge case: If for some reason OpenAIModel requires explicit config in this specific version
+    # We might need to construct a client, but usually env vars are enough.
+    # Let's try the simple instantiation first as confirmed by the error message (unexpected keyword argument).
+    model_main = OpenAIModel(KV_EXTRACTOR_MODEL)
+    model_eval = OpenAIModel(KV_EXTRACTOR_EVAL_MODEL)
 
 
 agent_main = Agent(model_main)
@@ -816,5 +822,6 @@ def initialize_and_run_server():
 if __name__ == "__main__":
     args = parse_args()
     logger = setup_logging(args.log, args.logfile)
-    logger.info("MCP Server starting up...")
+    if logger:
+        logger.info("MCP Server starting up...")
     server.run()
