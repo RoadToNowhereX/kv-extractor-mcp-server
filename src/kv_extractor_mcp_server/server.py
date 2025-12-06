@@ -100,9 +100,27 @@ def parse_args():
     return args
 
 # --- Main Processing Agent (lightweight model) ---
-agent_main = Agent('openai:gpt-4.1-mini')
+# --- Main Processing Agent (lightweight model) ---
+from pydantic_ai.models.openai import OpenAIModel
+
+# Check for environment variables
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
+KV_EXTRACTOR_MODEL = os.getenv("KV_EXTRACTOR_MODEL", "gpt-4.1-mini")
+KV_EXTRACTOR_EVAL_MODEL = os.getenv("KV_EXTRACTOR_EVAL_MODEL", "gpt-4.1")
+
+if OPENAI_BASE_URL:
+    logging.info(f"Using custom OpenAI Base URL: {OPENAI_BASE_URL}")
+    model_main = OpenAIModel(KV_EXTRACTOR_MODEL, base_url=OPENAI_BASE_URL)
+    model_eval = OpenAIModel(KV_EXTRACTOR_EVAL_MODEL, base_url=OPENAI_BASE_URL)
+else:
+    # Use default behavior (relies on OPENAI_API_KEY env var being set standardly)
+    model_main = f'openai:{KV_EXTRACTOR_MODEL}'
+    model_eval = f'openai:{KV_EXTRACTOR_EVAL_MODEL}'
+
+
+agent_main = Agent(model_main)
 # Evaluation agent (high-precision model)
-agent_eval = Agent('openai:gpt-4.1')
+agent_eval = Agent(model_eval)
 
 # --- Multilingual Support: spaCy NER Preprocessing (Step 0) ---
 LANG_MODEL_MAP = {
