@@ -267,71 +267,47 @@ addresses = '[{"city": "Tokyo", "zip": "160-0022"}, {"city": "Osaka", "zip": "53
 
 ## Usage
 
-### Installing via Smithery
+## Cherry Studio Configuration Guide
 
-To install kv-extractor-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@KunihiroS/kv-extractor-mcp-server):
+This server has been modified to support custom configurations via environment variables, allowing seamless integration with Cherry Studio (and other MCP clients).
 
-```bash
-npx -y @smithery/cli install @KunihiroS/kv-extractor-mcp-server --client claude
-```
+### Environment Variables
 
-### Requirements
-- Python 3.9+
-- API key for OpenAI models (set in `settings.json` under `env`)
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `OPENAI_API_KEY` | Your API Key. | (Required) |
+| `OPENAI_BASE_URL` | Custom API Base URL (e.g., for local endpoints or proxies). | `None` (Use Official OpenAI API) |
+| `KV_EXTRACTOR_MODEL` | The model used for extraction and annotation. | `gpt-4.1-mini` |
+| `KV_EXTRACTOR_EVAL_MODEL` | The model used for type evaluation and correction. | `gpt-4.1` |
 
-### Running the Server
+### Cherry Studio Configuration
 
-```bash
-python server.py
-```
-*In case you want to run the server manually.*
+To add this MCP server to Cherry Studio, use the following configuration JSON. Replace the placeholders with your actual values.
 
-## MCP Host Configuration
-
-When running this MCP Server, you **must explicitly specify the log output mode and (if enabled) the absolute log file path via command-line arguments**.
-
-- `--log=off` : Disable all logging (no logs are written)
-- `--log=on --logfile=/absolute/path/to/logfile.log` : Enable logging and write logs to the specified absolute file path
-- Both arguments are **required** when logging is enabled. The server will exit with an error if either is missing, the path is not absolute, or if invalid values are given.
-
-### Example: Logging Disabled
 ```json
-"kv-extractor-mcp-server": {
-  "command": "pipx",
-  "args": ["run", "kv-extractor-mcp-server", "--log=off"],
-  "env": {
-    "OPENAI_API_KEY": "{apikey}"
+{
+  "mcpServers": {
+    "kv-extractor": {
+      "command": "c:/path/to/your/virtualenv/Scripts/python.exe",
+      "args": [
+        "c:/path/to/kv-extractor-mcp-server/src/kv_extractor_mcp_server/server.py", 
+        "--log=off"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "OPENAI_BASE_URL": "https://api.openai.com/v1", 
+        "KV_EXTRACTOR_MODEL": "gpt-4o-mini",
+        "KV_EXTRACTOR_EVAL_MODEL": "gpt-4o"
+      }
+    }
   }
 }
 ```
 
-### Example: Logging Enabled (absolute log file path required)
-```json
-"kv-extractor-mcp-server": {
-  "command": "pipx",
-  "args": ["run", "kv-extractor-mcp-server", "--log=on", "--logfile=/workspace/logs/kv-extractor-mcp-server.log"],
-  "env": {
-    "OPENAI_API_KEY": "{apikey}"
-  }
-}
-```
-
-> **Note:**
-> - When logging is enabled, logs are written **only** to the specified absolute file path. Relative paths or omission of `--logfile` will cause an error.
-> - When logging is disabled, no logs are output.
-> - If the required arguments are missing or invalid, the server will not start and will print an error message.
-> - The log file must be accessible and writable by the MCP Server process.
-> - If you have trouble to run this server, it may be due to caching older version of kv-extractor-mcp-server. Please try to run it with the latest version (set `x.y.z` to the latest version) of kv-extractor-mcp-server by the below setting.
-
-```json
-"kv-extractor-mcp-server": {
-  "command": "pipx",
-  "args": ["run", "kv-extractor-mcp-server==x.y.z", "--log=off"],
-  "env": {
-    "OPENAI_API_KEY": "{apikey}"
-  }
-}
-```
+### Notes for Cherry Studio
+1.  **Python Executable**: **Crucial!** You MUST use the absolute path to the `python.exe` that has the dependencies installed (e.g., inside your virtual environment logic like `.venv/Scripts/python.exe`). Do NOT use just `python` unless your system default Python has the `pyproject.toml` dependencies installed.
+2.  **AbsolutePath**: Ensure the path to `server.py` is an absolute path.
+3.  **Logs**: The `--logfile` argument must also be an absolute path if enabled.
 
 ## License
 GPL-3.0-or-later
